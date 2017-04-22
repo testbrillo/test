@@ -1,0 +1,266 @@
+version 15.1X49-D40.6;
+system {
+    host-name vsrx;
+    root-authentication {
+        encrypted-password "$5$VAk44sWa$VcUNyA1rpVe6qiAYAJp8Yl12wdeJN7wqZ8KruHpi6p2"; ## SECRET-DATA
+    }
+    login {
+        user jdm-sysuser {
+            uid 2004;
+            class super-user;
+            authentication {
+                ssh-ecdsa "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBPDl/q+PbdUOErPUQo036yiZbK7XyilI8eixTt1VVIH98vKpedX/AJg46KN45zNnQEJDXSbGN3NVN6hlEWIom/0= jdm"; ## SECRET-DATA
+                ssh-ecdsa "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLZFrzZHj+t8X8bvLMAiM43RRt1u4S7zI577/ObUnYvzjkhuFM0mSibnL6AD2sG3blILTT4u5DswnVE9q1YYif4= jdm"; ## SECRET-DATA
+                ssh-ecdsa "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBBwzv8uzFNDhUdQ77Z2PrqFx8sbIBPz5pIy1BnmVl8F6tt6+6jILiS48rcCzl6mlCBlVXMYc9g6nZPssS5sX/7Y= jdm"; ## SECRET-DATA
+            }
+        }
+        user kelly {
+            uid 2000;
+            class super-user;
+            authentication {
+                encrypted-password "$5$kWidgUKm$m1H8SRnmCHEGecllm82.iuohITbrsj5sOMUNR8Zdev3"; ## SECRET-DATA
+            }
+        }
+        user woody {
+            uid 2001;
+            class super-user;
+            authentication {
+                encrypted-password "$5$BPrEOYUm$Gb9S.5layxYfjNYBkCuhOMMDNjtIgOlrDInHe6IcGb."; ## SECRET-DATA
+            }
+        }
+    }
+    services {
+        ssh;
+        netconf {
+            ssh;
+        }
+        web-management {
+            http {
+                interface ge-0/0/7.0;
+                interface ge-0/0/8.0;
+            }
+        }
+    }
+    syslog {
+        user * {
+            any emergency;
+        }
+        file messages {
+            any any;
+            authorization info;
+        }
+        file interactive-commands {
+            interactive-commands any;
+        }
+    }
+    no-compress-configuration-files;
+    license {
+        autoupdate {
+            url https://ae1.juniper.net/junos/key_retrieval;
+        }
+    }
+}
+security {
+    screen {
+        ids-option untrust-screen {
+            icmp {
+                ping-death;
+            }
+            ip {
+                source-route-option;
+                tear-drop;
+            }
+            tcp {
+                syn-flood {
+                    alarm-threshold 1024;
+                    attack-threshold 200;
+                    source-threshold 1024;
+                    destination-threshold 2048;
+                    queue-size 2000; ## Warning: 'queue-size' is deprecated
+                    timeout 20;
+                }
+                land;
+            }
+        }
+    }
+    policies {
+        from-zone trust to-zone trust {
+            policy default-permit {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+        from-zone trust to-zone untrust {
+            policy default-permit {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+        from-zone untrust to-zone trust {
+            policy default-permit {
+                match {
+                    source-address any;
+                    destination-address any;
+                    application any;
+                }
+                then {
+                    permit;
+                }
+            }
+        }
+    }
+    zones {
+        security-zone trust {
+            tcp-rst;
+            host-inbound-traffic {
+                system-services {
+                    http;
+                    ping;
+                    ntp;
+                    snmp;
+                    snmp-trap;
+                    ssh;
+                    netconf;
+                    dhcp;
+                }
+            }
+            interfaces {
+                ge-0/0/1.0;
+            }
+        }
+        security-zone untrust {
+            screen untrust-screen;
+            host-inbound-traffic {
+                system-services {
+                    http;
+                    ping;
+                    ntp;
+                    snmp;
+                    snmp-trap;
+                    ssh;
+                    netconf;
+                }
+            }
+            interfaces {
+                ge-0/0/7.0;
+                ge-0/0/8.0;
+            }
+        }
+    }
+}
+interfaces {
+	ge-0/0/0 {
+		description "Management interface"
+        unit 0 {
+            family inet {
+                address 10.0.0.3/30;
+            }
+        }
+    }
+	$$LanInterface
+    ge-0/0/1 {
+		description "Lan interface"
+        unit 0 {
+			family inet{
+				address $*serviceTwoIpAddress$/30
+			}
+        }
+    }
+	$$LanInterfaceEnds
+	ge-0/0/2 {
+		description "Lan interface"
+        unit 0 {
+        }
+    }
+	ge-0/0/3 {
+		description "Lan interface"
+        unit 0 {
+        }
+    }
+	ge-0/0/4 {
+		description "Lan interface"
+        unit 0 {
+        }
+    }
+	ge-0/0/5 {
+		description "Lan interface"
+        unit 0 {
+        }
+    }
+	ge-0/0/6 {
+		description "Lan interface"
+        unit 0 {
+        }
+    }
+	$$WanInterface
+    ge-0/0/7 {
+		description "Wan interface"
+		flexible-vlan-tagging;
+        unit 0 {
+			vlan-id $*secondaryVlanId$;
+            family inet {
+                address $*secondaryCeIpAddress0$/30;
+            }
+        }
+    }
+	$$WanInterfaceEnds
+    ge-0/0/8 {
+		description "Wan interface"
+        flexible-vlan-tagging;
+        unit 0 {
+            vlan-id $*primaryVlanId$;
+            family inet {
+                address $*primaryCeIpAddress0$/30;
+            }
+        }
+    }
+    fxp0 {
+		description "Liveliness interface"
+        unit 0 {
+        }
+    }
+}
+snmp {
+    location Verizon;
+    contact Verizon;
+    community private {
+        authorization read-write;
+    }
+    community public {
+        authorization read-only;
+    }
+}
+routing-options {
+    static {
+        route 0.0.0.0/0 next-hop $*serviceTwoIpAddress2$;
+    }
+    autonomous-system $*asNumber$;
+}
+protocols {
+    bgp {
+        traceoptions {
+            file bgp-log;
+            flag general;
+            flag all;
+        }
+        remove-private;
+        group as701-verizon {
+            type external;
+            neighbor $*serviceTwoIpAddress2${
+                peer-as $*peerAs$;
+            }
+        }
+    }
+}
